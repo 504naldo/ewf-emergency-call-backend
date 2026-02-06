@@ -236,3 +236,11 @@
 - [x] Update eas.json preview profile with production HTTPS URL (already configured correctly)
 - [x] Rebuild Android APK with fixed configuration
 - [x] Download fixed APK (Build ID: eabffd46-7bc1-4d2d-be79-80257cef6d28)
+
+## Network Request Failed Error (Standalone Build)
+- [x] Check if sandbox backend URL is accessible from external networks (confirmed accessible)
+- [x] Verify EXPO_PUBLIC_API_URL is correctly injected in build
+- [x] Found root cause: login.tsx using EXPO_PUBLIC_API_BASE_URL instead of getApiBaseUrl()
+- [x] Fixed login.tsx to use getApiBaseUrl() from constants/oauth
+- [x] Rebuild APK with corrected login configuration (Build ID: 5d34b8fd-7371-4200-a796-c4c695acd964)
+- [x] Download working APK

@@ -5,8 +5,7 @@ import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useState } from "react";
 import { router } from "expo-router";
 import { useAuth } from "@/lib/auth-context";
-
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || "http://localhost:3000";
+import { getApiBaseUrl } from "@/constants/oauth";
 
 export default function LoginScreen() {
   const colors = useColors();
@@ -24,7 +23,7 @@ export default function LoginScreen() {
 
     setLoading(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+      const response = await fetch(`${getApiBaseUrl()}/api/auth/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
