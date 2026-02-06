@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity, TextInput, ActivityIndicator, Alert } from "react-native";
+import { View, Text, TouchableOpacity, TextInput, ActivityIndicator, Alert, Image } from "react-native";
 import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
 import { useState } from "react";
@@ -54,9 +54,11 @@ export default function LoginScreen() {
       <View className="flex-1 items-center justify-center p-6 gap-8">
         {/* Logo/Title */}
         <View className="items-center gap-4">
-          <View className="w-24 h-24 bg-primary rounded-3xl items-center justify-center">
-            <Text className="text-4xl font-bold text-background">EWF</Text>
-          </View>
+          <Image
+            source={{ uri: "https://files.manuscdn.com/user_upload_by_module/session_file/113852657/pdzVPLVluGlTluky.png" }}
+            style={{ width: 170, height: 170 }}
+            resizeMode="contain"
+          />
           <Text className="text-3xl font-bold text-foreground">Emergency Call Service</Text>
           <Text className="text-base text-muted text-center">
             Internal emergency call routing and incident management

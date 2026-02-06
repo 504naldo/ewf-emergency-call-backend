@@ -171,3 +171,8 @@
 - [x] Add token validation on app load that calls users.getMe
 - [x] Automatically logout and show login screen when 401 detected
 - [ ] Test token expiration and invalid token scenarios
+
+## Login Screen Logo
+- [x] Add EWF logo centered above "Emergency Call Service" title
+- [x] Set max width to ~170px with auto height
+- [x] Maintain proper spacing to avoid pushing login fields too low
