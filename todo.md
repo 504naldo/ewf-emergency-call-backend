@@ -218,3 +218,10 @@
 - [x] Document build process and distribution steps
 - [ ] Build Android APK for internal distribution (requires Expo account)
 - [ ] Build iOS TestFlight-ready build (requires Apple Developer account)
+
+## Android APK Build
+- [x] Authenticate with Expo account
+- [x] Configure EAS project
+- [x] Build Android APK with preview profile
+- [x] Download APK file
+- [x] Provide APK to user for distribution
