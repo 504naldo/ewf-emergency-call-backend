@@ -206,3 +206,15 @@
 - [x] Add shared secret header fallback for webhook security
 - [x] Create Twilio Studio Flow plan document
 - [x] Test all webhook endpoints
+
+## EAS Build Configuration
+- [x] Update app name to "EWF Emergency" in app.config.ts
+- [x] Verify app icon and splash screen are configured
+- [x] Add EXPO_PUBLIC_API_URL environment variable
+- [x] Update tRPC client to use EXPO_PUBLIC_API_URL
+- [x] Create eas.json with preview and production profiles
+- [x] Configure preview profile for Android APK and iOS internal distribution
+- [x] Configure production profile for Android AAB and iOS App Store
+- [x] Document build process and distribution steps
+- [ ] Build Android APK for internal distribution (requires Expo account)
+- [ ] Build iOS TestFlight-ready build (requires Apple Developer account)
