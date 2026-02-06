@@ -159,3 +159,9 @@
 - [x] Try alternative approach: render login screen directly instead of redirect
 - [x] Add more detailed console logging to track navigation flow
 - [x] Removed router navigation dependency - AuthGuard renders login directly
+
+## tRPC Token Attachment Fix
+- [x] Update tRPC client to read JWT token from storage on every request
+- [x] Ensure Authorization header is attached to all tRPC calls
+- [x] Update tRPC context to validate JWT tokens from Authorization header
+- [ ] Test that authenticated endpoints work after login
