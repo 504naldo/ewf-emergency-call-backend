@@ -176,3 +176,4 @@
 - [x] Add EWF logo centered above "Emergency Call Service" title
 - [x] Set max width to ~170px with auto height
 - [x] Maintain proper spacing to avoid pushing login fields too low
+- [x] Replace with correct EWF "earth wind and fire" logo

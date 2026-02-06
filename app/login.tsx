@@ -55,8 +55,8 @@ export default function LoginScreen() {
         {/* Logo/Title */}
         <View className="items-center gap-4">
           <Image
-            source={{ uri: "https://files.manuscdn.com/user_upload_by_module/session_file/113852657/pdzVPLVluGlTluky.png" }}
-            style={{ width: 170, height: 170 }}
+            source={{ uri: "https://files.manuscdn.com/user_upload_by_module/session_file/113852657/nPOljwohFWrZoKjw.png" }}
+            style={{ width: 280, height: 100 }}
             resizeMode="contain"
           />
           <Text className="text-3xl font-bold text-foreground">Emergency Call Service</Text>
