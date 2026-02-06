@@ -153,3 +153,9 @@
 - [x] Fix AuthGuard to properly redirect when no token exists
 - [x] Add loading state to prevent Home screen rendering before auth check
 - [x] Ensure tRPC queries don't run until auth is confirmed
+
+## Persistent Login Issue
+- [x] Check if Expo Router redirect is working properly
+- [x] Try alternative approach: render login screen directly instead of redirect
+- [x] Add more detailed console logging to track navigation flow
+- [x] Removed router navigation dependency - AuthGuard renders login directly

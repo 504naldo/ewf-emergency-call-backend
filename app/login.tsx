@@ -38,9 +38,9 @@ export default function LoginScreen() {
 
       // Store token and user via AuthContext
       await login(data.token, data.user);
-
-      // Navigate to home
-      router.replace("/(tabs)");
+      
+      console.log("[Login] Login successful, auth state updated");
+      // No need to navigate - AuthGuard will automatically render the app
     } catch (error: any) {
       console.error("[Login] Error:", error);
       Alert.alert("Login Failed", error.message || "Invalid email or password");
