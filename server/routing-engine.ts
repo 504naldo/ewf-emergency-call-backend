@@ -302,7 +302,14 @@ export async function createIncident(data: {
   };
 
   const result: any = await db.insert(incidents).values(incidentData);
-  const incidentId = result.insertId;
+  
+  // Drizzle ORM returns different result structures depending on the driver
+  // For mysql2, the result is an array where the first element has insertId
+  const incidentId = Array.isArray(result) ? result[0]?.insertId : result.insertId;
+  
+  if (!incidentId) {
+    throw new Error("Failed to get incident ID from insert result");
+  }
 
   // Log incident creation event
   await logIncidentEvent({

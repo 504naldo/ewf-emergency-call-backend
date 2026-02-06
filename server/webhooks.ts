@@ -179,7 +179,7 @@ router.post("/webhooks/telephony/missed", async (req, res) => {
  * Test endpoint to simulate an incoming emergency call
  * Usage: POST /webhooks/telephony/test
  */
-router.post("/webhooks/telephony/test", async (req, res) => {
+const handleTestCall = async (res: any) => {
   try {
     const testPayload: IncomingCallPayload = {
       callId: `test-${Date.now()}`,
@@ -211,6 +211,21 @@ router.post("/webhooks/telephony/test", async (req, res) => {
     console.error("[Webhook] Test error:", error);
     res.status(500).json({ error: error.message });
   }
+};
+
+router.post("/webhooks/telephony/test", async (req, res) => {
+  await handleTestCall(res);
 });
+
+/**
+ * DEV-ONLY: GET endpoint for browser-based testing
+ * Usage: GET /webhooks/telephony/test
+ * WARNING: This endpoint is only available in development mode
+ */
+if (process.env.NODE_ENV !== "production") {
+  router.get("/webhooks/telephony/test", async (req, res) => {
+    await handleTestCall(res);
+  });
+}
 
 export default router;

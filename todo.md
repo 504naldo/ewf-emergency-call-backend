@@ -97,3 +97,6 @@
 - [ ] Test admin board real-time updates
 - [ ] Test RBAC permissions
 - [ ] End-to-end test of full call flow
+
+## New Features
+- [x] Add DEV-ONLY GET endpoint at /api/webhooks/telephony/test for browser testing
