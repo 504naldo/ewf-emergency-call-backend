@@ -1,17 +1,30 @@
 import { ScrollView, Text, View, TouchableOpacity, Switch, TextInput, Alert } from "react-native";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ScreenContainer } from "@/components/screen-container";
 import { trpc } from "@/lib/trpc";
 import { useColors } from "@/hooks/use-colors";
-import { useAuth } from "@/hooks/use-auth";
 import { router } from "expo-router";
+import { getCachedUser, removeAuthToken } from "@/lib/auth-helpers";
 
 export default function SettingsScreen() {
   const colors = useColors();
-  const { logout } = useAuth();
+  const [currentUser, setCurrentUser] = useState<any>(null);
 
-  // Fetch current user
-  const { data: currentUser } = trpc.users.getMe.useQuery();
+  useEffect(() => {
+    loadUser();
+  }, []);
+
+  const loadUser = async () => {
+    const user = await getCachedUser();
+    setCurrentUser(user);
+  };
+
+  const handleLogout = async () => {
+    await removeAuthToken();
+    router.replace("/login");
+  };
+
+
 
   // Fetch configuration
   const { data: businessHours, refetch: refetchBH } = trpc.config.getBusinessHours.useQuery();
@@ -68,9 +81,42 @@ export default function SettingsScreen() {
         <View className="flex-1 p-6 gap-6">
           {/* Header */}
           <View className="gap-2">
-            <Text className="text-3xl font-bold text-foreground">Configuration</Text>
-            <Text className="text-base text-muted">System settings and routing rules</Text>
+            <Text className="text-3xl font-bold text-foreground">Settings</Text>
+            <Text className="text-base text-muted">System configuration and account</Text>
           </View>
+
+          {/* User Info */}
+          {currentUser && (
+            <View className="bg-surface rounded-2xl p-6 border border-border gap-3">
+              <Text className="text-lg font-bold text-foreground">Account Information</Text>
+              <View className="gap-2">
+                <View>
+                  <Text className="text-sm text-muted">Name</Text>
+                  <Text className="text-base text-foreground font-semibold">{currentUser.name}</Text>
+                </View>
+                <View>
+                  <Text className="text-sm text-muted">Email</Text>
+                  <Text className="text-base text-foreground">{currentUser.email}</Text>
+                </View>
+                <View>
+                  <Text className="text-sm text-muted">Role</Text>
+                  <View className="flex-row items-center gap-2">
+                    <View
+                      className="px-3 py-1 rounded-full"
+                      style={{ backgroundColor: `${colors.primary}20` }}
+                    >
+                      <Text
+                        className="text-sm font-semibold uppercase"
+                        style={{ color: colors.primary }}
+                      >
+                        {currentUser.role}
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+              </View>
+            </View>
+          )}
 
           {/* Business Hours */}
           <View className="bg-surface rounded-2xl p-6 border border-border gap-4">
@@ -249,14 +295,11 @@ export default function SettingsScreen() {
                   "Are you sure you want to logout?",
                   [
                     { text: "Cancel", style: "cancel" },
-                    {
-                      text: "Logout",
-                      style: "destructive",
-                      onPress: async () => {
-                        await logout();
-                        router.replace("/login");
-                      },
-                    },
+                  {
+                    text: "Logout",
+                    style: "destructive",
+                    onPress: handleLogout,
+                  },
                   ],
                 );
               }}

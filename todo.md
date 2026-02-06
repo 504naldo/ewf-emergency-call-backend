@@ -118,3 +118,11 @@
 - [x] Implement server-side RBAC (admin/manager routes)
 - [x] Restrict techs to only their own data
 - [x] Add webhook signature verification
+
+## Email/Password Authentication
+- [x] Create login API endpoint (POST /api/auth/login)
+- [x] Update login screen with email/password form
+- [x] Store auth token securely (SecureStore on native, localStorage on web)
+- [x] Fetch current user on app load after login
+- [x] Show user name + role in Settings tab
+- [x] Update logout to clear token and redirect to login

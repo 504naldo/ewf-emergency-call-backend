@@ -1,19 +1,56 @@
-import { View, Text, TouchableOpacity, ActivityIndicator } from "react-native";
+import { View, Text, TouchableOpacity, TextInput, ActivityIndicator, Alert } from "react-native";
 import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
-import { startOAuthLogin } from "@/constants/oauth";
 import { useState } from "react";
+import { router } from "expo-router";
+import * as SecureStore from "expo-secure-store";
+import { Platform } from "react-native";
+
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || "http://localhost:3000";
 
 export default function LoginScreen() {
   const colors = useColors();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
+    if (!email || !password) {
+      Alert.alert("Error", "Please enter email and password");
+      return;
+    }
+
     setLoading(true);
     try {
-      await startOAuthLogin();
-    } catch (error) {
+      const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Login failed");
+      }
+
+      // Store token securely
+      if (Platform.OS === "web") {
+        localStorage.setItem("auth_token", data.token);
+        localStorage.setItem("user_info", JSON.stringify(data.user));
+      } else {
+        await SecureStore.setItemAsync("auth_token", data.token);
+        await SecureStore.setItemAsync("user_info", JSON.stringify(data.user));
+      }
+
+      // Navigate to home
+      router.replace("/(tabs)");
+    } catch (error: any) {
       console.error("[Login] Error:", error);
+      Alert.alert("Login Failed", error.message || "Invalid email or password");
+    } finally {
       setLoading(false);
     }
   };
@@ -32,29 +69,57 @@ export default function LoginScreen() {
           </Text>
         </View>
 
-        {/* Login Button */}
-        <TouchableOpacity
-          onPress={handleLogin}
-          disabled={loading}
-          style={{
-            backgroundColor: loading ? colors.border : colors.primary,
-            paddingHorizontal: 48,
-            paddingVertical: 16,
-            borderRadius: 12,
-            minWidth: 200,
-          }}
-        >
-          {loading ? (
-            <ActivityIndicator color={colors.background} />
-          ) : (
-            <Text className="text-background text-center font-semibold text-lg">Sign In</Text>
-          )}
-        </TouchableOpacity>
+        {/* Login Form */}
+        <View className="w-full max-w-sm gap-4">
+          <TextInput
+            className="bg-surface border border-border rounded-xl px-4 py-4 text-foreground text-base"
+            placeholder="Email"
+            placeholderTextColor={colors.muted}
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            autoCorrect={false}
+            editable={!loading}
+          />
+          
+          <TextInput
+            className="bg-surface border border-border rounded-xl px-4 py-4 text-foreground text-base"
+            placeholder="Password"
+            placeholderTextColor={colors.muted}
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+            autoCapitalize="none"
+            autoCorrect={false}
+            editable={!loading}
+            returnKeyType="done"
+            onSubmitEditing={handleLogin}
+          />
 
-        {/* Info Text */}
-        <Text className="text-sm text-muted text-center">
-          Sign in with your EWF account to access the emergency call system
-        </Text>
+          <TouchableOpacity
+            onPress={handleLogin}
+            disabled={loading}
+            style={{
+              backgroundColor: loading ? colors.border : colors.primary,
+              paddingVertical: 16,
+              borderRadius: 12,
+            }}
+          >
+            {loading ? (
+              <ActivityIndicator color={colors.background} />
+            ) : (
+              <Text className="text-background text-center font-semibold text-lg">Sign In</Text>
+            )}
+          </TouchableOpacity>
+        </View>
+
+        {/* Demo Credentials */}
+        <View className="bg-surface border border-border rounded-xl p-4 w-full max-w-sm">
+          <Text className="text-sm font-semibold text-foreground mb-2">Demo Credentials:</Text>
+          <Text className="text-sm text-muted">Email: john.smith@ewf.com</Text>
+          <Text className="text-sm text-muted">Password: (any password)</Text>
+        </View>
       </View>
     </ScreenContainer>
   );

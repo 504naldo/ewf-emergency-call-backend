@@ -7,6 +7,7 @@ import { registerOAuthRoutes } from "./oauth";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import webhookRoutes from "../webhooks";
+import authRoutes from "../auth";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise((resolve) => {
@@ -56,6 +57,9 @@ async function startServer() {
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
   registerOAuthRoutes(app);
+
+  // Register auth routes
+  app.use("/api", authRoutes);
 
   // Register webhook routes
   app.use("/api", webhookRoutes);
