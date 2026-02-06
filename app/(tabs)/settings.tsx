@@ -1,26 +1,19 @@
 import { ScrollView, Text, View, TouchableOpacity, Switch, TextInput, Alert } from "react-native";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { ScreenContainer } from "@/components/screen-container";
 import { trpc } from "@/lib/trpc";
 import { useColors } from "@/hooks/use-colors";
 import { router } from "expo-router";
-import { getCachedUser, removeAuthToken } from "@/lib/auth-helpers";
+import { useAuth } from "@/lib/auth-context";
 
 export default function SettingsScreen() {
   const colors = useColors();
-  const [currentUser, setCurrentUser] = useState<any>(null);
-
-  useEffect(() => {
-    loadUser();
-  }, []);
-
-  const loadUser = async () => {
-    const user = await getCachedUser();
-    setCurrentUser(user);
-  };
+  const { user: currentUser, token, isAuthenticated, logout } = useAuth();
+  const utils = trpc.useUtils();
 
   const handleLogout = async () => {
-    await removeAuthToken();
+    await logout();
+    utils.invalidate(); // Clear tRPC cache
     router.replace("/login");
   };
 
@@ -117,6 +110,33 @@ export default function SettingsScreen() {
               </View>
             </View>
           )}
+
+          {/* Auth Debug Info */}
+          <View className="bg-surface rounded-2xl p-6 border border-border gap-3">
+            <Text className="text-lg font-bold text-foreground">Auth Debug</Text>
+            <View className="gap-2">
+              <View className="flex-row justify-between">
+                <Text className="text-sm text-muted">Authenticated</Text>
+                <Text className="text-sm font-semibold text-foreground">
+                  {isAuthenticated ? "✅ Yes" : "❌ No"}
+                </Text>
+              </View>
+              <View className="flex-row justify-between">
+                <Text className="text-sm text-muted">Token Present</Text>
+                <Text className="text-sm font-semibold text-foreground">
+                  {token ? "✅ Yes" : "❌ No"}
+                </Text>
+              </View>
+              {token && (
+                <View>
+                  <Text className="text-sm text-muted">Token (first 30 chars)</Text>
+                  <Text className="text-xs font-mono text-foreground">
+                    {token.substring(0, 30)}...
+                  </Text>
+                </View>
+              )}
+            </View>
+          </View>
 
           {/* Business Hours */}
           <View className="bg-surface rounded-2xl p-6 border border-border gap-4">

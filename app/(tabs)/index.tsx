@@ -4,16 +4,22 @@ import { ScreenContainer } from "@/components/screen-container";
 import { trpc } from "@/lib/trpc";
 import { useColors } from "@/hooks/use-colors";
 import { router } from "expo-router";
+import { useAuth } from "@/lib/auth-context";
 
 export default function HomeScreen() {
   const colors = useColors();
+  const { isLoading: authLoading, isAuthenticated } = useAuth();
   const [refreshing, setRefreshing] = useState(false);
 
-  // Fetch current user
-  const { data: currentUser, error: userError, refetch: refetchUser } = trpc.users.getMe.useQuery();
+  // Fetch current user (only when authenticated)
+  const { data: currentUser, error: userError, refetch: refetchUser } = trpc.users.getMe.useQuery(undefined, {
+    enabled: !authLoading && isAuthenticated,
+  });
 
-  // Fetch user's incidents
-  const { data: incidents = [], error: incidentsError, refetch: refetchIncidents } = trpc.incidents.getMyIncidents.useQuery();
+  // Fetch user's incidents (only when authenticated)
+  const { data: incidents = [], error: incidentsError, refetch: refetchIncidents } = trpc.incidents.getMyIncidents.useQuery(undefined, {
+    enabled: !authLoading && isAuthenticated,
+  });
 
   // Log errors to console and screen
   if (userError) {

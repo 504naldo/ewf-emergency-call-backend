@@ -138,3 +138,11 @@
 - [x] Seed test users with real hashed passwords
 - [x] Set JWT_SECRET environment variable (built-in)
 - [x] Create users.me tRPC procedure for token validation (getMe)
+
+## Auth Regression Fixes
+- [x] Store JWT token in SecureStore/AsyncStorage on successful login
+- [x] Load token on app launch and set global auth state
+- [x] Call users.me after token load, route to Login on 401
+- [x] Gate tRPC queries until authReady=true
+- [x] Add debug info in Settings (authStatus, tokenPresent, currentUser)
+- [x] Fix logout to clear token and reset tRPC cache

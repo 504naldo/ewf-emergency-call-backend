@@ -3,13 +3,13 @@ import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
 import { useState } from "react";
 import { router } from "expo-router";
-import * as SecureStore from "expo-secure-store";
-import { Platform } from "react-native";
+import { useAuth } from "@/lib/auth-context";
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || "http://localhost:3000";
 
 export default function LoginScreen() {
   const colors = useColors();
+  const { login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -36,14 +36,8 @@ export default function LoginScreen() {
         throw new Error(data.error || "Login failed");
       }
 
-      // Store token securely
-      if (Platform.OS === "web") {
-        localStorage.setItem("auth_token", data.token);
-        localStorage.setItem("user_info", JSON.stringify(data.user));
-      } else {
-        await SecureStore.setItemAsync("auth_token", data.token);
-        await SecureStore.setItemAsync("user_info", JSON.stringify(data.user));
-      }
+      // Store token and user via AuthContext
+      await login(data.token, data.user);
 
       // Navigate to home
       router.replace("/(tabs)");

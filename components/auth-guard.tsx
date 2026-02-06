@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { View, ActivityIndicator } from "react-native";
 import { useRouter, useSegments } from "expo-router";
 import { useColors } from "@/hooks/use-colors";
-import { getAuthToken } from "@/lib/auth-helpers";
+import { useAuth } from "@/lib/auth-context";
 
 /**
  * Auth Guard Component
@@ -12,27 +12,10 @@ import { getAuthToken } from "@/lib/auth-helpers";
  * Redirects to home if authenticated and on login page.
  */
 export function AuthGuard({ children }: { children: React.ReactNode }) {
-  const [isLoading, setIsLoading] = useState(true);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const { isLoading, isAuthenticated } = useAuth();
   const router = useRouter();
   const segments = useSegments();
   const colors = useColors();
-
-  useEffect(() => {
-    checkAuth();
-  }, []);
-
-  const checkAuth = async () => {
-    try {
-      const token = await getAuthToken();
-      setIsAuthenticated(!!token);
-    } catch (error) {
-      console.error("[AuthGuard] Error checking auth:", error);
-      setIsAuthenticated(false);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   useEffect(() => {
     if (isLoading) return;
@@ -41,9 +24,11 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
 
     if (!isAuthenticated && !inAuthGroup) {
       // Redirect to login if not authenticated
+      console.log("[AuthGuard] Not authenticated, redirecting to login");
       router.replace("/login");
     } else if (isAuthenticated && inAuthGroup) {
       // Redirect to home if authenticated and on login page
+      console.log("[AuthGuard] Authenticated, redirecting to home");
       router.replace("/(tabs)");
     }
   }, [isAuthenticated, isLoading, segments, router]);
