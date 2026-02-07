@@ -353,3 +353,21 @@
 - [ ] Test Building ID validation on submit
 - [ ] Test Building ID displays correctly in read-only view
 - [ ] Test Building ID appears in share summary
+
+## Building ID in Incident Creation
+### Backend
+- [x] Add building_id column to incidents table schema
+- [x] Run database migration to add building_id column (0005_nervous_virginia_dare.sql)
+- [x] Update createIncident function to accept buildingId parameter
+- [x] Update telephony webhook to accept buildingId from Twilio call metadata
+- [ ] Update incidents.getById to return building_id (automatic via schema)
+
+### Mobile
+- [x] Pre-populate Building ID in report form from incident.buildingId
+- [x] Pass buildingId prop to IncidentReportForm component
+- [ ] Display Building ID in incident detail view (optional - already in report form)
+
+### Testing
+- [ ] Test creating incident with Building ID
+- [ ] Test Building ID pre-populates in report form
+- [ ] Test Building ID displays in incident detail

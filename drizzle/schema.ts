@@ -88,6 +88,7 @@ export const incidents = mysqlTable("incidents", {
   bhAh: mysqlEnum("bhAh", ["business_hours", "after_hours"]).notNull(),
   callerId: varchar("callerId", { length: 50 }),
   siteId: int("siteId"),
+  buildingId: varchar("buildingId", { length: 100 }), // Building identifier
   status: mysqlEnum("status", [
     "open",
     "en_route",

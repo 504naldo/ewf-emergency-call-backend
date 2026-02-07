@@ -291,6 +291,7 @@ export async function createIncident(data: {
   externalId?: string;
   callerId?: string;
   siteId?: number;
+  buildingId?: string;
 }): Promise<number> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
@@ -302,6 +303,7 @@ export async function createIncident(data: {
     bhAh: isBH ? "business_hours" : "after_hours",
     callerId: data.callerId,
     siteId: data.siteId,
+    buildingId: data.buildingId,
     status: "open",
   };
 

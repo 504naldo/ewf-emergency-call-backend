@@ -35,10 +35,11 @@ interface IncidentReportFormProps {
   incidentId: number;
   incidentNumber?: number;
   siteName?: string;
+  buildingId?: string;
   onSaved?: () => void;
 }
 
-export function IncidentReportForm({ incidentId, incidentNumber, siteName, onSaved }: IncidentReportFormProps) {
+export function IncidentReportForm({ incidentId, incidentNumber, siteName, buildingId, onSaved }: IncidentReportFormProps) {
   const colors = useColors();
   const [formData, setFormData] = useState<ReportData>({
     status: "resolved",
@@ -77,8 +78,11 @@ export function IncidentReportForm({ incidentId, incidentNumber, siteName, onSav
   useEffect(() => {
     if (existingReport?.jsonData) {
       setFormData(existingReport.jsonData);
+    } else if (buildingId && !formData.buildingId) {
+      // Pre-populate Building ID from incident if not already set
+      setFormData((prev) => ({ ...prev, buildingId }));
     }
-  }, [existingReport]);
+  }, [existingReport, buildingId]);
 
   const isSubmitted = existingReport?.status === "submitted";
   const isReadOnly = isSubmitted;

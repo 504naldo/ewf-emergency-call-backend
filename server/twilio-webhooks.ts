@@ -173,9 +173,9 @@ async function logCallAttempt(
  */
 router.post("/telephony/next-target", verifyTwilioSignature, async (req, res) => {
   try {
-    const { incidentId: existingIncidentId, callerPhone, callSid } = req.body;
+    const { incidentId: existingIncidentId, callerPhone, callSid, buildingId } = req.body;
     
-    console.log("[Twilio] next-target request:", { existingIncidentId, callerPhone, callSid });
+    console.log("[Twilio] next-target request:", { existingIncidentId, callerPhone, callSid, buildingId });
     
     const db = await getDb();
     if (!db) {
@@ -189,6 +189,7 @@ router.post("/telephony/next-target", verifyTwilioSignature, async (req, res) =>
       incidentId = await createIncident({
         callerId: callerPhone || "unknown",
         siteId: undefined, // Will be matched by routing engine
+        buildingId: buildingId || undefined, // From Twilio call metadata
       });
       console.log("[Twilio] Created incident:", incidentId);
     }

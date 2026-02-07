@@ -86,6 +86,7 @@ export default function IncidentDetailScreen() {
             incidentId={incidentId}
             incidentNumber={incident.id}
             siteName={site?.name}
+            buildingId={incident.buildingId || undefined}
             onSaved={() => refetch()}
           />
         </View>
