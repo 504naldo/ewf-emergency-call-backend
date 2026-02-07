@@ -84,6 +84,8 @@ export const sites = mysqlTable("sites", {
 export const incidents = mysqlTable("incidents", {
   id: int("id").autoincrement().primaryKey(),
   externalId: varchar("externalId", { length: 255 }).unique(), // From telephony provider
+  source: mysqlEnum("source", ["telephony", "manual"]).default("telephony").notNull(), // How incident was created
+  createdByUserId: int("createdByUserId"), // User who created manual incident (null for telephony)
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   bhAh: mysqlEnum("bhAh", ["business_hours", "after_hours"]).notNull(),
   callerId: varchar("callerId", { length: 50 }),

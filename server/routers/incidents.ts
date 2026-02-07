@@ -175,4 +175,59 @@ export const incidentsRouter = router({
 
       return { success: true };
     }),
+
+  // Create manual incident (admin/manager only) - ADMIN ONLY
+  createManual: adminProcedure
+    .input(
+      z.object({
+        buildingId: z.string().min(1, "Building ID is required"),
+        site: z.string().min(1, "Site/Address is required"),
+        incidentType: z.string().min(1, "Incident type is required"),
+        description: z.string().min(1, "Description is required"),
+        priority: z.enum(["low", "medium", "high", "critical"]),
+        callerName: z.string().optional(),
+        callerPhone: z.string().optional(),
+        assignedTechId: z.number().optional(),
+        triggerRouting: z.boolean().default(false),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      // Import createIncident from routing-engine
+      const { createIncident } = await import("../routing-engine");
+
+      // Create the incident with source='manual'
+      const incidentId = await createIncident({
+        buildingId: input.buildingId,
+        source: "manual",
+        createdByUserId: ctx.user.id,
+        callerId: input.callerPhone,
+      });
+
+      // Log additional incident details in event
+      await logIncidentEvent({
+        incidentId,
+        type: "manual_incident_created",
+        userId: ctx.user.id,
+        payloadJson: {
+          site: input.site,
+          incidentType: input.incidentType,
+          description: input.description,
+          priority: input.priority,
+          callerName: input.callerName,
+          callerPhone: input.callerPhone,
+          createdBy: ctx.user.id,
+        },
+      });
+
+      // If assigned tech is specified, assign immediately
+      if (input.assignedTechId) {
+        await assignIncident(incidentId, input.assignedTechId, ctx.user.id);
+      }
+      // If trigger routing is enabled and no tech assigned, start routing
+      else if (input.triggerRouting) {
+        await startRouting(incidentId);
+      }
+
+      return { success: true, incidentId };
+    }),
 });

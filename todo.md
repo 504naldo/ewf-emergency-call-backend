@@ -371,3 +371,44 @@
 - [ ] Test creating incident with Building ID
 - [ ] Test Building ID pre-populates in report form
 - [ ] Test Building ID displays in incident detail
+
+## Manual Incident Creation (Admin/Manager)
+### Backend
+- [x] Update incidents schema to add source field ('telephony' | 'manual')
+- [x] Update incidents schema to add created_by_user_id field
+- [x] Add incidents.createManual tRPC endpoint (admin/manager only)
+- [x] Add permission check for admin/manager roles
+- [x] Accept required fields: building_id, site/address, incident_type, description, priority
+- [x] Accept optional fields: caller_name, caller_phone, assigned_tech_id
+- [x] Default status to 'open' for manual incidents
+- [x] Store created_by_user_id from JWT token
+- [x] Add triggerRouting parameter to createManual endpoint
+- [x] Implement routing trigger logic (calls routing engine if triggerRouting=true)
+
+### Mobile/Admin UI
+- [x] Add "Create Incident" button to Admin Incidents screen
+- [x] Create manual incident creation form modal/screen
+- [x] Add Building ID text input (required)
+- [x] Add Site/Address text input (required)
+- [x] Add Incident Type picker (required)
+- [x] Add Description textarea (required)
+- [x] Add Priority picker (required)
+- [x] Add Caller Name text input (optional)
+- [x] Add Caller Phone text input (optional)
+- [x] Add Assigned Tech picker (optional)
+- [x] Add "Trigger on-call routing immediately" checkbox
+- [x] Implement form validation
+- [x] Call incidents.createManual on submit
+- [x] Show success message and navigate to incident detail
+- [x] Show error message on failure
+
+### Testing
+- [x] Test manual incident creation as admin
+- [x] Test manual incident creation as manager
+- [x] Test permission denial for technicians (enforced by adminProcedure)
+- [ ] Test with routing trigger enabled (UI testing required)
+- [ ] Test with routing trigger disabled (UI testing required)
+- [ ] Test with assigned tech (UI testing required)
+- [ ] Test without assigned tech (UI testing required)
+- [x] Verify source='manual' stored correctly
+- [x] Verify created_by_user_id stored correctly

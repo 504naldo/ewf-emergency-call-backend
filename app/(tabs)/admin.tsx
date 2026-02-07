@@ -1,6 +1,7 @@
 import { ScrollView, Text, View, TouchableOpacity, RefreshControl, ActivityIndicator } from "react-native";
 import { useState } from "react";
 import { ScreenContainer } from "@/components/screen-container";
+import { CreateIncidentModal } from "@/components/create-incident-modal";
 import { trpc } from "@/lib/trpc";
 import { useColors } from "@/hooks/use-colors";
 import { router } from "expo-router";
@@ -8,6 +9,7 @@ import { router } from "expo-router";
 export default function AdminBoardScreen() {
   const colors = useColors();
   const [refreshing, setRefreshing] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
   // Fetch current user
   const { data: currentUser, error: userError } = trpc.users.getMe.useQuery();
@@ -70,8 +72,21 @@ export default function AdminBoardScreen() {
         <View className="flex-1 p-6 gap-6">
           {/* Header */}
           <View className="gap-2">
-            <Text className="text-3xl font-bold text-foreground">Admin Board</Text>
-            <Text className="text-base text-muted">Real-time incident monitoring</Text>
+            <View className="flex-row items-center justify-between">
+              <View className="flex-1">
+                <Text className="text-3xl font-bold text-foreground">Admin Board</Text>
+                <Text className="text-base text-muted">Real-time incident monitoring</Text>
+              </View>
+              <TouchableOpacity
+                className="rounded-xl px-4 py-3 active:opacity-70"
+                style={{ backgroundColor: colors.primary }}
+                onPress={() => setShowCreateModal(true)}
+              >
+                <Text className="font-bold" style={{ color: colors.background }}>
+                  + Create
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
 
           {/* Error Display */}
@@ -256,6 +271,16 @@ export default function AdminBoardScreen() {
           </View>
         </View>
       </ScrollView>
+
+      {/* Create Incident Modal */}
+      <CreateIncidentModal
+        visible={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onSuccess={(incidentId) => {
+          handleRefresh();
+          router.push(`/incident/${incidentId}` as any);
+        }}
+      />
     </ScreenContainer>
   );
 }

@@ -292,6 +292,8 @@ export async function createIncident(data: {
   callerId?: string;
   siteId?: number;
   buildingId?: string;
+  source?: "telephony" | "manual";
+  createdByUserId?: number;
 }): Promise<number> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
@@ -300,6 +302,8 @@ export async function createIncident(data: {
 
   const incidentData: InsertIncident = {
     externalId: data.externalId,
+    source: data.source || "telephony",
+    createdByUserId: data.createdByUserId,
     bhAh: isBH ? "business_hours" : "after_hours",
     callerId: data.callerId,
     siteId: data.siteId,
