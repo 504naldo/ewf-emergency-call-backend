@@ -244,3 +244,14 @@
 - [x] Fixed login.tsx to use getApiBaseUrl() from constants/oauth
 - [x] Rebuild APK with corrected login configuration (Build ID: 5d34b8fd-7371-4200-a796-c4c695acd964)
 - [x] Download working APK
+
+## Android App Icon Update
+- [x] Copy EWF logo to project assets directory
+- [x] Create transparent foreground icon from EWF logo (1024x1024 RGBA)
+- [x] Set adaptive icon background color to #E6F4FE (light blue-gray)
+- [x] Create legacy icon with background (1024x1024 RGB)
+- [x] Create favicon (192x192) and splash icon (200x200)
+- [x] Verify icon assets are valid PNG files
+- [x] Configure app.config.ts with proper icon paths (removed non-existent backgroundImage and monochromeImage)
+- [x] Rebuild Android APK with new icon (Build ID: b4c0ad80-57bc-4314-be2b-3314290dc74c)
+- [x] Download APK with EWF logo icon (48 MB)
