@@ -22,4 +22,12 @@ export const usersRouter = router({
 
       return { success: true };
     }),
+
+  // Toggle availability for any user - ADMIN ONLY
+  toggleAvailability: adminProcedure
+    .input(z.object({ userId: z.number(), available: z.boolean() }))
+    .mutation(async ({ input }) => {
+      await updateUserAvailability(input.userId, input.available);
+      return { success: true };
+    }),
 });

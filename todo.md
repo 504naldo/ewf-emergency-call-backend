@@ -299,3 +299,34 @@
 - [x] Add report viewing capability to Incident Detail screen for admins/managers
 - [x] Show report status and submitted date (already in report form)
 - [x] Allow admin/manager to view all reports regardless of assignment
+
+## Real Technician Users
+### Backend
+- [x] Update users schema to add phone_number field (nullable) - already exists as 'phone'
+- [x] Add password_hash field to users table - already exists as 'password'
+- [x] Create seed script for 7 technician users (tony, chris, ranaldo, markus, pat, russ, craig @ewandf.ca)
+- [x] Set default role as technician, is_active = true
+- [x] Implement password hashing with SHA-256 (crypto built-in)
+- [x] Run seed script - all 7 technicians created successfully
+
+### Auth
+- [x] Implement email/password login endpoint (already exists at /api/auth/login)
+- [x] Updated all technician passwords to use bcrypt hashing
+- [x] JWT token generation for email/password auth (already implemented)
+- [ ] Add password reset functionality for admins
+- [ ] Separate demo credentials from production users
+
+### Mobile
+- [x] Create Admin → Technicians screen
+- [x] Show technician list with availability status
+- [x] Add availability toggle for each technician
+- [x] Add toggleAvailability tRPC endpoint for admins
+- [x] Add Technicians tab to tab bar navigation
+- [ ] Filter incident assignment to available technicians only
+- [ ] Add admin password reset UI
+
+### Testing
+- [ ] Test email/password login for all technicians
+- [ ] Test availability toggle
+- [ ] Test incident assignment with availability filter
+- [ ] Verify demo credentials don't access prod data
