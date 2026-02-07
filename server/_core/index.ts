@@ -80,11 +80,21 @@ async function startServer() {
     }),
   );
 
+  // In production (Railway/Render), use exact PORT from environment
+  // In development, find available port starting from 3000
+  const isProduction = process.env.NODE_ENV === "production";
   const preferredPort = parseInt(process.env.PORT || "3000");
-  const port = await findAvailablePort(preferredPort);
-
-  if (port !== preferredPort) {
-    console.log(`Port ${preferredPort} is busy, using port ${port} instead`);
+  
+  let port: number;
+  if (isProduction) {
+    // Production: use exact port (Railway requires this)
+    port = preferredPort;
+  } else {
+    // Development: find available port
+    port = await findAvailablePort(preferredPort);
+    if (port !== preferredPort) {
+      console.log(`Port ${preferredPort} is busy, using port ${port} instead`);
+    }
   }
 
   server.listen(port, () => {
