@@ -7,6 +7,7 @@ import {
   ScrollView,
   ActivityIndicator,
   Alert,
+  Share,
 } from "react-native";
 import { useColors } from "@/hooks/use-colors";
 import { trpc } from "@/lib/trpc";
@@ -22,16 +23,21 @@ interface ReportData {
   photos?: string[];
   status?: "resolved" | "temporary" | "follow_up";
   followUpNotes?: string;
+  arrivalTime?: string;
+  departTime?: string;
+  billableHours?: number;
   techSignature?: string;
   customerSignature?: string;
 }
 
 interface IncidentReportFormProps {
   incidentId: number;
+  incidentNumber?: number;
+  siteName?: string;
   onSaved?: () => void;
 }
 
-export function IncidentReportForm({ incidentId, onSaved }: IncidentReportFormProps) {
+export function IncidentReportForm({ incidentId, incidentNumber, siteName, onSaved }: IncidentReportFormProps) {
   const colors = useColors();
   const [formData, setFormData] = useState<ReportData>({
     status: "resolved",
@@ -111,6 +117,88 @@ export function IncidentReportForm({ incidentId, onSaved }: IncidentReportFormPr
         },
       ]
     );
+  };
+
+  const handleShareSummary = async () => {
+    const summary = generateReportSummary();
+    try {
+      await Share.share({
+        message: summary,
+        title: `Incident Report #${incidentNumber || incidentId}`,
+      });
+    } catch (error) {
+      console.error("Error sharing report:", error);
+    }
+  };
+
+  const generateReportSummary = (): string => {
+    const lines: string[] = [];
+    lines.push(`INCIDENT REPORT #${incidentNumber || incidentId}`);
+    lines.push(`=`.repeat(50));
+    lines.push("");
+
+    if (siteName || formData.site) {
+      lines.push(`Site: ${siteName || formData.site}`);
+    }
+    if (formData.address) {
+      lines.push(`Address: ${formData.address}`);
+    }
+    if (formData.issueType) {
+      lines.push(`Issue Type: ${formData.issueType}`);
+    }
+    lines.push("");
+
+    if (formData.description) {
+      lines.push("DESCRIPTION:");
+      lines.push(formData.description);
+      lines.push("");
+    }
+
+    if (formData.actionsTaken) {
+      lines.push("ACTIONS TAKEN:");
+      lines.push(formData.actionsTaken);
+      lines.push("");
+    }
+
+    if (formData.partsUsed) {
+      lines.push("PARTS USED:");
+      lines.push(formData.partsUsed);
+      lines.push("");
+    }
+
+    if (formData.arrivalTime) {
+      lines.push(`Arrival Time: ${new Date(formData.arrivalTime).toLocaleString()}`);
+    }
+    if (formData.departTime) {
+      lines.push(`Depart Time: ${new Date(formData.departTime).toLocaleString()}`);
+    }
+    if (formData.billableHours !== undefined) {
+      lines.push(`Billable Hours: ${formData.billableHours.toFixed(2)} hours`);
+    }
+    lines.push("");
+
+    if (formData.status) {
+      const statusText =
+        formData.status === "resolved"
+          ? "Resolved"
+          : formData.status === "temporary"
+          ? "Temporary Fix"
+          : "Follow-up Required";
+      lines.push(`Status: ${statusText}`);
+    }
+
+    if (formData.followUpNotes) {
+      lines.push("");
+      lines.push("FOLLOW-UP NOTES:");
+      lines.push(formData.followUpNotes);
+    }
+
+    if (existingReport?.status === "submitted" && existingReport.updatedAt) {
+      lines.push("");
+      lines.push(`Submitted: ${new Date(existingReport.updatedAt).toLocaleString()}`);
+    }
+
+    return lines.join("\n");
   };
 
   if (isLoading) {
@@ -210,6 +298,91 @@ export function IncidentReportForm({ incidentId, onSaved }: IncidentReportFormPr
           />
         </View>
 
+        {/* Arrival Time */}
+        <View className="gap-2">
+          <Text className="text-sm font-semibold text-foreground">Arrival Time</Text>
+          <TouchableOpacity
+            className={cn(
+              "bg-surface rounded-xl p-4 border border-border",
+              isReadOnly && "opacity-60"
+            )}
+            onPress={() => {
+              if (!isReadOnly) {
+                const now = new Date();
+                setFormData({ ...formData, arrivalTime: now.toISOString() });
+              }
+            }}
+            disabled={isReadOnly}
+          >
+            <Text className="text-base text-foreground">
+              {formData.arrivalTime
+                ? new Date(formData.arrivalTime).toLocaleString()
+                : "Tap to set arrival time"}
+            </Text>
+          </TouchableOpacity>
+          {formData.arrivalTime && !isReadOnly && (
+            <TouchableOpacity
+              className="self-end"
+              onPress={() => setFormData({ ...formData, arrivalTime: undefined, billableHours: undefined })}
+            >
+              <Text className="text-sm text-error">Clear</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {/* Depart Time */}
+        <View className="gap-2">
+          <Text className="text-sm font-semibold text-foreground">Depart Time</Text>
+          <TouchableOpacity
+            className={cn(
+              "bg-surface rounded-xl p-4 border border-border",
+              isReadOnly && "opacity-60"
+            )}
+            onPress={() => {
+              if (!isReadOnly) {
+                const now = new Date();
+                setFormData({ ...formData, departTime: now.toISOString() });
+                // Auto-calculate billable hours if arrival time is set
+                if (formData.arrivalTime) {
+                  const arrival = new Date(formData.arrivalTime);
+                  const depart = now;
+                  const hours = (depart.getTime() - arrival.getTime()) / (1000 * 60 * 60);
+                  setFormData((prev) => ({
+                    ...prev,
+                    departTime: now.toISOString(),
+                    billableHours: Math.round(hours * 100) / 100,
+                  }));
+                }
+              }
+            }}
+            disabled={isReadOnly}
+          >
+            <Text className="text-base text-foreground">
+              {formData.departTime
+                ? new Date(formData.departTime).toLocaleString()
+                : "Tap to set depart time"}
+            </Text>
+          </TouchableOpacity>
+          {formData.departTime && !isReadOnly && (
+            <TouchableOpacity
+              className="self-end"
+              onPress={() => setFormData({ ...formData, departTime: undefined, billableHours: undefined })}
+            >
+              <Text className="text-sm text-error">Clear</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {/* Billable Hours */}
+        {formData.billableHours !== undefined && (
+          <View className="bg-primary/10 rounded-xl p-4 border border-primary">
+            <Text className="text-sm font-semibold text-foreground mb-1">Billable Hours</Text>
+            <Text className="text-2xl font-bold text-primary">
+              {formData.billableHours.toFixed(2)} hours
+            </Text>
+          </View>
+        )}
+
         {/* Parts Used */}
         <View className="gap-2">
           <Text className="text-sm font-semibold text-foreground">Parts Used (Optional)</Text>
@@ -306,6 +479,18 @@ export function IncidentReportForm({ incidentId, onSaved }: IncidentReportFormPr
               </Text>
             </TouchableOpacity>
           </View>
+        )}
+
+        {/* Share Summary Button */}
+        {(isSubmitted || formData.description) && (
+          <TouchableOpacity
+            className="bg-surface rounded-2xl p-4 border border-border active:opacity-70 mt-4"
+            onPress={handleShareSummary}
+          >
+            <Text className="text-center text-base font-semibold text-foreground">
+              📤 Share Summary
+            </Text>
+          </TouchableOpacity>
         )}
 
         {/* Submitted Note */}

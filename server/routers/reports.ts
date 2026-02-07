@@ -15,6 +15,9 @@ const reportDataSchema = z.object({
   photos: z.array(z.string()).optional(),
   status: z.enum(["resolved", "temporary", "follow_up"]).optional(),
   followUpNotes: z.string().optional(),
+  arrivalTime: z.string().optional(), // ISO datetime string
+  departTime: z.string().optional(), // ISO datetime string
+  billableHours: z.number().optional(),
   techSignature: z.string().optional(),
   customerSignature: z.string().optional(),
 });

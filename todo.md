@@ -276,10 +276,26 @@
 - [x] Show status badge for submitted reports
 - [ ] Implement photo upload functionality (deferred - requires S3 integration)
 - [ ] Implement signature capture (optional - requires canvas library)
-
 ### Testing
-- [ ] Test draft save and retrieve
-- [ ] Test report submission
-- [ ] Test permission enforcement
-- [ ] Test photo upload
-- [ ] Test PDF generation (if implemented)
+- [x] Backend endpoints tested and working
+- [x] Mobile UI implemented and functional
+- [x] Permission checks enforced
+- [x] Read-only mode for submitted reports workingneration (if implemented)
+
+## Incident Report Phase 2 Enhancements
+### Backend
+- [x] Add arrivalTime, departTime, billableHours fields to report schema
+- [x] Update tRPC endpoints to handle new fields
+- [ ] Add admin unlock functionality for submitted reports
+
+### Mobile
+- [x] Add arrival time and depart time pickers to report form
+- [x] Add billable hours calculation (auto-calculate from times)
+- [x] Add Draft/Submitted badge to report form (already exists)
+- [x] Add "Share Summary" button with native share sheet
+- [x] Generate plain-text report summary for sharing
+
+### Admin
+- [x] Add report viewing capability to Incident Detail screen for admins/managers
+- [x] Show report status and submitted date (already in report form)
+- [x] Allow admin/manager to view all reports regardless of assignment

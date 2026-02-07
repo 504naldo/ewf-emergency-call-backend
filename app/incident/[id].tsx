@@ -13,6 +13,9 @@ export default function IncidentDetailScreen() {
 
   const incidentId = parseInt(id || "0");
 
+  // Fetch current user
+  const { data: currentUser } = trpc.users.getMe.useQuery();
+
   // Fetch incident details
   const { data, isLoading, refetch } = trpc.incidents.getDetails.useQuery({ id: incidentId });
 
@@ -79,7 +82,12 @@ export default function IncidentDetailScreen() {
             </TouchableOpacity>
             <Text className="text-2xl font-bold text-foreground mt-2">Incident Report</Text>
           </View>
-          <IncidentReportForm incidentId={incidentId} onSaved={() => refetch()} />
+          <IncidentReportForm
+            incidentId={incidentId}
+            incidentNumber={incident.id}
+            siteName={site?.name}
+            onSaved={() => refetch()}
+          />
         </View>
       </ScreenContainer>
     );
@@ -273,7 +281,7 @@ export default function IncidentDetailScreen() {
           )}
 
           {/* Report Button */}
-          {incident.assignedUserId && (
+          {(incident.assignedUserId || currentUser?.role === "admin" || currentUser?.role === "manager") && (
             <TouchableOpacity
               className="bg-surface rounded-2xl p-4 border-2 border-primary active:opacity-70"
               onPress={() => setShowReport(true)}
