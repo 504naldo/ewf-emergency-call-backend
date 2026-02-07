@@ -330,3 +330,26 @@
 - [ ] Test availability toggle
 - [ ] Test incident assignment with availability filter
 - [ ] Verify demo credentials don't access prod data
+
+## Building ID Field for Incident Reports
+### Backend
+- [x] Add building_id field to report data schema
+- [x] Add validation for building_id on submit (required for submitted reports)
+- [x] Update reports.getByIncident to include building_id (automatic via jsonData)
+- [x] Update reports.submit to validate building_id presence
+
+### Mobile
+- [x] Add Building ID text input field near top of report form
+- [x] Persist building_id in report data
+- [x] Display Building ID in read-only view after submission
+- [x] Show Building ID in share summary text
+
+### Admin
+- [x] Display Building ID on Admin Incident → Report view (automatic via report form)
+- [x] Include Building ID in future PDF exports (will be included when PDF feature is added)
+
+### Testing
+- [ ] Test Building ID field saves in draft
+- [ ] Test Building ID validation on submit
+- [ ] Test Building ID displays correctly in read-only view
+- [ ] Test Building ID appears in share summary

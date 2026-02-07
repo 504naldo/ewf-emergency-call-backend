@@ -14,6 +14,7 @@ import { trpc } from "@/lib/trpc";
 import { cn } from "@/lib/utils";
 
 interface ReportData {
+  buildingId?: string;
   site?: string;
   address?: string;
   issueType?: string;
@@ -137,6 +138,9 @@ export function IncidentReportForm({ incidentId, incidentNumber, siteName, onSav
     lines.push(`=`.repeat(50));
     lines.push("");
 
+    if (formData.buildingId) {
+      lines.push(`Building ID: ${formData.buildingId}`);
+    }
     if (siteName || formData.site) {
       lines.push(`Site: ${siteName || formData.site}`);
     }
@@ -223,6 +227,24 @@ export function IncidentReportForm({ incidentId, incidentNumber, siteName, onSav
             </Text>
           </View>
         )}
+
+        {/* Building ID */}
+        <View className="gap-2">
+          <Text className="text-sm font-semibold text-foreground">
+            Building ID <Text className="text-error">*</Text>
+          </Text>
+          <TextInput
+            className={cn(
+              "bg-surface rounded-xl p-4 text-base text-foreground border border-border",
+              isReadOnly && "opacity-60"
+            )}
+            placeholder="Enter building ID"
+            placeholderTextColor={colors.muted}
+            value={formData.buildingId || ""}
+            onChangeText={(text) => setFormData({ ...formData, buildingId: text })}
+            editable={!isReadOnly}
+          />
+        </View>
 
         {/* Site/Address */}
         <View className="gap-2">

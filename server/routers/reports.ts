@@ -6,6 +6,7 @@ import { eq } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 
 const reportDataSchema = z.object({
+  buildingId: z.string().optional(), // Required for submission, optional for draft
   site: z.string().optional(),
   address: z.string().optional(),
   issueType: z.string().optional(),
@@ -162,6 +163,14 @@ export const reportsRouter = router({
         throw new TRPCError({
           code: "FORBIDDEN",
           message: "Only the assigned technician can submit reports",
+        });
+      }
+
+      // Validate required fields for submission
+      if (!input.data.buildingId || input.data.buildingId.trim() === "") {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Building ID is required for report submission",
         });
       }
 
