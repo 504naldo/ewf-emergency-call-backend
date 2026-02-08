@@ -1,6 +1,7 @@
 {
   "cli": {
-    "version": ">= 14.0.0"
+    "version": ">= 14.0.0",
+    "appVersionSource": "local"
   },
   "build": {
     "development": {
@@ -19,7 +20,7 @@
         "simulator": false
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "REPLACE_WITH_YOUR_RAILWAY_URL"
+        "EXPO_PUBLIC_API_URL": "https://ewf-emergency-call-backend-production.up.railway.app"
       }
     },
     "production": {
@@ -30,7 +31,7 @@
         "simulator": false
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "REPLACE_WITH_YOUR_RAILWAY_URL"
+        "EXPO_PUBLIC_API_URL": "https://ewf-emergency-call-backend-production.up.railway.app"
       }
     }
   },

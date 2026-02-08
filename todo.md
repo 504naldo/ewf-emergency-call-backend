@@ -472,3 +472,22 @@
 - [x] Commit and push to GitHub
 - [ ] User: Wait for Railway auto-redeploy
 - [ ] User: Verify deployment succeeds
+
+## Railway Compatibility Verification
+- [x] Verify DATABASE_URL is used for MySQL connection
+- [x] Verify server binds to process.env.PORT
+- [x] Verify /health endpoint exists
+- [x] Check if automatic migrations are needed on startup
+- [x] Document all required environment variables for Railway
+- [x] Test Railway deployment with MySQL
+- [x] Run database migrations
+- [x] Seed database with demo users and technicians
+
+## Change Admin User
+- [x] Update ranaldo@ewandf.ca to admin role in database
+
+## Production Build with Railway Backend
+- [x] Update eas.json with Railway production URL
+- [x] Test Railway API health endpoint
+- [ ] Rebuild Android APK with production backend (EAS CLI issue in sandbox)
+- [ ] Verify APK connects to Railway successfully
