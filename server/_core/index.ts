@@ -16,7 +16,7 @@ async function startServer() {
   const server = createServer(app);
   // Debug logger - remove later
   app.use((req, _res, next) => {
-    console.log(`[REQ] ${req.method} ${req.path} origin=${req.headers.origin ?? "none}`);
+    console.log(`[REQ] ${req.method} ${req.path} origin=${req.headers.origin ?? "none"}`);
     next();
     });                                                        
 
