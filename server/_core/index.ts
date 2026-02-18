@@ -1,44 +1,25 @@
 import "dotenv/config";
 import express from "express";
 import { createServer } from "http";
-import net from "net";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
+
 import { registerOAuthRoutes } from "./oauth";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
+
 import webhookRoutes from "../webhooks";
 import authRoutes from "../auth";
 import twilioWebhookRoutes from "../twilio-webhooks";
-
-function isPortAvailable(port: number): Promise<boolean> {
-  return new Promise((resolve) => {
-    const server = net.createServer();
-    server.listen(port, () => {
-      server.close(() => resolve(true));
-    });
-    server.on("error", () => resolve(false));
-  });
-}
-
-async function findAvailablePort(startPort: number = 3000): Promise<number> {
-  for (let port = startPort; port < startPort + 20; port++) {
-    if (await isPortAvailable(port)) {
-      return port;
-    }
-  }
-  throw new Error(`No available port found starting from ${startPort}`);
-}
 
 async function startServer() {
   const app = express();
   const server = createServer(app);
 
-  // Enable CORS for all routes - reflect the request origin to support credentials
+  // CORS (reflect origin so credentials work)
   app.use((req, res, next) => {
     const origin = req.headers.origin;
-    if (origin) {
-      res.header("Access-Control-Allow-Origin", origin);
-    }
+    if (origin) res.header("Access-Control-Allow-Origin", origin);
+
     res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
     res.header(
       "Access-Control-Allow-Headers",
@@ -46,7 +27,6 @@ async function startServer() {
     );
     res.header("Access-Control-Allow-Credentials", "true");
 
-    // Handle preflight requests
     if (req.method === "OPTIONS") {
       res.sendStatus(200);
       return;
@@ -59,28 +39,17 @@ async function startServer() {
 
   registerOAuthRoutes(app);
 
-  // Register auth routes
+  // REST routes
   app.use("/api", authRoutes);
-
-  // Register webhook routes
   app.use("/api", webhookRoutes);
-  
-  // Register Twilio webhook routes
   app.use("/api", twilioWebhookRoutes);
 
-  // Lightweight health endpoints for Railway healthcheck
-  app.get("/", (_req, res) => {
-    res.status(200).send("OK");
-  });
+  // Health endpoints
+  app.get("/", (_req, res) => res.status(200).send("OK"));
+  app.get("/health", (_req, res) => res.status(200).json({ status: "ok", timestamp: Date.now() }));
+  app.get("/api/health", (_req, res) => res.json({ ok: true, timestamp: Date.now() }));
 
-  app.get("/health", (_req, res) => {
-    res.status(200).json({ status: "ok", timestamp: Date.now() });
-  });
-
-  app.get("/api/health", (_req, res) => {
-    res.json({ ok: true, timestamp: Date.now() });
-  });
-
+  // tRPC endpoint
   app.use(
     "/api/trpc",
     createExpressMiddleware({
@@ -89,30 +58,13 @@ async function startServer() {
     }),
   );
 
-  // In production (Railway/Render), use exact PORT from environment
-  // In development, find available port starting from 3000
-  const isProduction = process.env.NODE_ENV === "production";
-  const preferredPort = parseInt(process.env.PORT || "3000");
-  
-  let port: number;
-  if (isProduction) {
-    // Production: use exact port (Railway requires this)
-    port = preferredPort;
-  } else {
-    // Development: find available port
-    port = await findAvailablePort(preferredPort);
-    if (port !== preferredPort) {
-      console.log(`Port ${preferredPort} is busy, using port ${port} instead`);
-    }
-  }
+  // ✅ Railway/Render/etc: always use PORT if provided
+  const port = Number(process.env.PORT ?? 3000);
 
-  // Bind to 0.0.0.0 for Railway (required for container networking)
-  const host = isProduction ? "0.0.0.0" : "localhost";
-  
-  server.listen(port, host, () => {
-    console.log(`[api] server listening on ${host}:${port}`);
+  // ✅ bind 0.0.0.0 so Railway can route traffic into the container
+  server.listen(port, "0.0.0.0", () => {
+    console.log(`[api] server listening on 0.0.0.0:${port}`);
     console.log(`[api] environment: ${process.env.NODE_ENV || "development"}`);
-    console.log(`[api] health check available at http://${host}:${port}/health`);
   });
 }
 
