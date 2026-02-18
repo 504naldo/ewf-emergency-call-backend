@@ -14,6 +14,11 @@ import twilioWebhookRoutes from "../twilio-webhooks";
 async function startServer() {
   const app = express();
   const server = createServer(app);
+  // Debug logger - remove later
+  app.use((req, _res, next) => {
+    console.log(`[REQ] ${req.method} ${req.path} origin=${req.headers.origin ?? "none}`);
+    next();
+    });                                                        
 
   // CORS (reflect origin so credentials work)
   app.use((req, res, next) => {
