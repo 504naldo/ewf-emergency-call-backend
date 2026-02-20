@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EWF Database Admin</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        h1 { color: #333; margin-bottom: 10px; }
+        .subtitle { color: #666; font-size: 14px; }
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        .action-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: transform 0.2s;
+        }
+        .action-btn:hover { transform: translateY(-2px); }
+        textarea {
+            width: 100%;
+            min-height: 150px;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            resize: vertical;
+            margin-bottom: 15px;
+        }
+        .btn-primary {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+        }
+        .results {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        .success { background: #efe; border-left-color: #38a169; }
+        .error { background: #fee; border-left-color: #e53e3e; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #e0e0e0; }
+        th { background: #f8f9fa; font-weight: 600; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🗄️ EWF Database Admin</h1>
+            <p class="subtitle">Quick database management</p>
+        </div>
+        <div class="card">
+            <h2 style="margin-bottom: 20px;">Quick Actions</h2>
+            <div class="quick-actions">
+                <button class="action-btn" onclick="insertTestIncident()">➕ Create Test Incident</button>
+                <button class="action-btn" onclick="viewAllIncidents()">📋 View All Incidents</button>
+                <button class="action-btn" onclick="viewAllUsers()">👥 View All Users</button>
+                <button class="action-btn" onclick="countRecords()">🔢 Count Records</button>
+            </div>
+        </div>
+        <div class="card">
+            <h2 style="margin-bottom: 15px;">Custom SQL Query</h2>
+            <textarea id="sqlQuery" placeholder="Enter SQL query..."></textarea>
+            <button class="btn-primary" onclick="executeQuery()">▶️ Execute Query</button>
+        </div>
+        <div id="results"></div>
+    </div>
+    <script>
+        const API_URL = 'https://ewf-emergency-call-backend-production.up.railway.app/api/trpc/admin.executeSQL';
+        
+        async function executeSQL(sql ) {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<div class="results"><h3>Executing...</h3></div>';
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sql })
+                });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.error?.message || 'Query failed');
+                displayResults(data.result);
+            } catch (error) {
+                resultsDiv.innerHTML = `<div class="results error"><h3>❌ Error</h3><pre>${error.message}</pre></div>`;
+            }
+        }
+        
+        function displayResults(data) {
+            const resultsDiv = document.getElementById('results');
+            if (data.rows && data.rows.length > 0) {
+                const keys = Object.keys(data.rows[0]);
+                let html = `<div class="results success"><h3>✅ Success - ${data.rows.length} row(s)</h3><table><thead><tr>`;
+                keys.forEach(key => html += `<th>${key}</th>`);
+                html += '</tr></thead><tbody>';
+                data.rows.forEach(row => {
+                    html += '<tr>';
+                    keys.forEach(key => html += `<td>${row[key] ?? '<em>NULL</em>'}</td>`);
+                    html += '</tr>';
+                });
+                html += '</tbody></table></div>';
+                resultsDiv.innerHTML = html;
+            } else {
+                resultsDiv.innerHTML = `<div class="results success"><h3>✅ Success</h3><pre>${JSON.stringify(data, null, 2)}</pre></div>`;
+            }
+        }
+        
+        function executeQuery() {
+            const sql = document.getElementById('sqlQuery').value.trim();
+            if (!sql) { alert('Please enter a SQL query'); return; }
+            executeSQL(sql);
+        }
+        
+        function insertTestIncident() {
+            const sql = `INSERT INTO incidents (source, createdByUserId, bhAh, status, buildingId, createdAt) VALUES ('manual', 1, 'business_hours', 'open', 'Test Building 101', NOW())`;
+            document.getElementById('sqlQuery').value = sql;
+            executeSQL(sql);
+        }
+        
+        function viewAllIncidents() {
+            const sql = 'SELECT * FROM incidents ORDER BY createdAt DESC LIMIT 20';
+            document.getElementById('sqlQuery').value = sql;
+            executeSQL(sql);
+        }
+        
+        function viewAllUsers() {
+            const sql = 'SELECT id, email, name, role, active, available FROM users';
+            document.getElementById('sqlQuery').value = sql;
+            executeSQL(sql);
+        }
+        
+        function countRecords() {
+            const sql = 'SELECT (SELECT COUNT(*) FROM incidents) as total_incidents, (SELECT COUNT(*) FROM users) as total_users';
+            document.getElementById('sqlQuery').value = sql;
+            executeSQL(sql);
+        }
+    </script>
+</body>
+</html>
