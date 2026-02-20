@@ -13,6 +13,7 @@ import twilioWebhookRoutes from "../twilio-webhooks";
 
 async function startServer() {
   const app = express();
+  app.use(express.static('public'));
   const server = createServer(app);
   // Debug logger - remove later
   app.use((req, _res, next) => {
