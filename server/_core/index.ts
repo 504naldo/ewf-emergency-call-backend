@@ -28,8 +28,10 @@ async function startServer( ) {
     // Allow requests from browsers with origin header OR from local files (no origin)
     if (origin) {
       res.header("Access-Control-Allow-Origin", origin);
+      res.header("Access-Control-Allow-Credentials", "true");
     } else {
       res.header("Access-Control-Allow-Origin", "*");
+      // Don't set credentials header when origin is *
     }
 
     res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
@@ -37,7 +39,6 @@ async function startServer( ) {
       "Access-Control-Allow-Headers",
       "Origin, X-Requested-With, Content-Type, Accept, Authorization",
     );
-    res.header("Access-Control-Allow-Credentials", "true");
 
     if (req.method === "OPTIONS") {
       res.sendStatus(200);
