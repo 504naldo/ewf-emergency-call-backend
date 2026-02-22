@@ -1,7 +1,8 @@
 import { getDb } from "../db";
 import { users } from "../../drizzle/schema";
 import { eq } from "drizzle-orm";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
+
 
 /**
  * Update technician passwords to use bcrypt hashing
