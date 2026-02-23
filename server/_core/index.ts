@@ -68,37 +68,51 @@ async function startServer( ) {
 
   // Custom REST endpoint for SQL execution (admin tool)
   app.post("/api/admin/execute-sql", async (req, res) => {
+    console.log('[Admin SQL] Request received');
     try {
       const { sql } = req.body;
+      console.log('[Admin SQL] Query:', sql);
       
       if (!sql || typeof sql !== 'string') {
+        console.log('[Admin SQL] Invalid SQL');
         return res.status(400).json({ error: 'SQL query is required' });
       }
 
-      const { getDb } = await import('../db');
-      const db = await getDb();
+      console.log('[Admin SQL] Importing mysql2...');
+      // Use raw MySQL connection instead of Drizzle
+      const mysql = await import('mysql2/promise');
+      console.log('[Admin SQL] Creating connection...');
+      const connection = await mysql.createConnection(process.env.DATABASE_URL!);
+      console.log('[Admin SQL] Connection created');
       
-      if (!db) {
-        return res.status(500).json({ error: 'Database not available' });
-      }
-
-      const result: any = await db.execute(sql);
-      
-      // Handle different result types
-      if (Array.isArray(result)) {
-        return res.json({ rows: result });
-      } else if (result.rows) {
-        return res.json({ rows: result.rows });
-      } else {
-        return res.json({ 
-          affectedRows: result.affectedRows || 0,
-          insertId: result.insertId || 0,
-          message: "Query executed successfully"
-        });
+      try {
+        console.log('[Admin SQL] Executing query...');
+        const [result]: any = await connection.query(sql);
+        console.log('[Admin SQL] Query executed, result type:', typeof result, 'isArray:', Array.isArray(result));
+        
+        // Handle different result types
+        if (Array.isArray(result)) {
+          console.log('[Admin SQL] Returning rows:', result.length);
+          return res.json({ rows: result });
+        } else if (result.affectedRows !== undefined) {
+          console.log('[Admin SQL] Returning affected rows:', result.affectedRows);
+          return res.json({ 
+            affectedRows: result.affectedRows || 0,
+            insertId: result.insertId || 0,
+            message: "Query executed successfully"
+          });
+        } else {
+          console.log('[Admin SQL] Unknown result type, returning empty');
+          return res.json({ rows: [] });
+        }
+      } finally {
+        console.log('[Admin SQL] Closing connection');
+        await connection.end();
       }
     } catch (error: any) {
-      console.error('[SQL Error]', error);
-      return res.status(500).json({ error: `SQL Error: ${error.message}` });
+      console.error('[SQL Error] Full error:', error);
+      console.error('[SQL Error] Error stack:', error.stack);
+      return res.status(500).json({ error: `SQL Error: ${error.message || String(error)}` });
     }
   });
 
