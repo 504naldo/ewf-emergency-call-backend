@@ -13,7 +13,7 @@ Backend  API server for the EWF Emergency Call Service mobile application. Handl
 - **Manual Incident Creation**: Admins can create incidents manually
 - **Health Monitoring**: `/api/trpc/health.check` endpoint for uptime monitoring
 
-## Tech Stack
+## Tech  Stack
 
 - **Runtime**: Node.js 22.x
 - **Framework**: Express.js
