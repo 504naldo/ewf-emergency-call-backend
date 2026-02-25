@@ -1,6 +1,6 @@
 import { Expo, ExpoPushMessage } from 'expo-server-sdk';
 import { db } from '../db';
-import { notifications } from './schema';
+import { notifications } from './drizzle/schema';
 import { eq, inArray } from 'drizzle-orm';
 
 const expo = new Expo();
