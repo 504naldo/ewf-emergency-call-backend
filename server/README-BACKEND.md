@@ -1,6 +1,6 @@
 # EWF Emergency Call Service - Backend API
 
-Backend API server for the EWF Emergency Call Service mobile application. Handles incident management, on-call routing, user authentication, and technician dispatch.
+Backend API server for the EWF Emergency Call Service mobile application. Handles incident management, on-call routing, user authentication, and technician dispatch..
 
 ## Features
 
