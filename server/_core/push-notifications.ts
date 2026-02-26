@@ -1,6 +1,6 @@
 import { Expo, ExpoPushMessage } from 'expo-server-sdk';
 import { db } from '../db';
-import { notifications } from './drizzle/schema';
+import { notifications, users } from '../../drizzle/schema';
 import { eq, inArray } from 'drizzle-orm';
 
 const expo = new Expo();
@@ -26,8 +26,8 @@ export async function sendPushNotification(
       .where(inArray(notifications.userId, userIds));
 
     const pushTokens = userNotifications
-      .filter((n) => n.enabled && n.pushToken && Expo.isExpoPushToken(n.pushToken))
-      .map((n) => n.pushToken!);
+      .filter((n) => n.enabled && n.expoPushToken && Expo.isExpoPushToken(n.expoPushToken))
+      .map((n) => n.expoPushToken!);
 
     if (pushTokens.length === 0) {
       console.log('No valid push tokens found for users:', userIds);
@@ -69,14 +69,14 @@ export async function sendPushNotification(
  */
 export async function notifyAvailableTechnicians(notification: PushNotificationData) {
   try {
-    // Get all users with technician or manager role who are available
-    const { users } = await import('./schema');
+    // Get all users with technician or manager role
     const availableTechs = await db
       .select()
-      .from(users)
-      .where(eq(users.role, 'technician'));
+      .from(users);
 
-    const techIds = availableTechs.map((t) => t.id);
+    const techIds = availableTechs
+      .filter((u) => u.role === 'technician' || u.role === 'manager')
+      .map((t) => t.id);
     
     if (techIds.length > 0) {
       await sendPushNotification(techIds, notification);
