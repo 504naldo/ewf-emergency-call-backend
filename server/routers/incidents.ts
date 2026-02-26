@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { db } from '../db';
-import { incidents, users } from '../drizzle/schema';
+import { incidents, users } from '../../drizzle/schema';
 import { eq, and, isNull, desc } from 'drizzle-orm';
 import { notifyAvailableTechnicians } from '../_core/push-notifications';
 
