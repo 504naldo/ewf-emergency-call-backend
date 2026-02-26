@@ -195,8 +195,7 @@ export async function resolveUserForStep(
       return result.map((r: any) => r.id);
     }
 
-    case "broadcast":
-    case "admin": {
+    case "broadcast": {
       const result: any = await db
         .select({ id: users.id })
         .from(users)
@@ -256,11 +255,9 @@ async function getNextRotatingUsers(
     .limit(1);
 
   let pointerIndex = 0;
-  let rotationId = 1;
 
   if (rotationResult && rotationResult.length > 0) {
     pointerIndex = rotationResult[0].pointerIndex || 0;
-    rotationId = rotationResult[0].id;
   }
 
   // Get next 3 users from rotation, wrapping around if needed
@@ -272,13 +269,22 @@ async function getNextRotatingUsers(
 
   // Update rotation pointer
   const newPointerIndex = (pointerIndex + 3) % availableUserIds.length;
-  await db
-    .update(rotationState)
-    .set({
+
+  if (rotationResult && rotationResult.length > 0) {
+    await db
+      .update(rotationState)
+      .set({
+        pointerIndex: newPointerIndex,
+        lastUsedUserIds: next3Users,
+      })
+      .where(eq(rotationState.id, rotationResult[0].id));
+  } else {
+    // Bootstrap rotation state row on first use
+    await db.insert(rotationState).values({
       pointerIndex: newPointerIndex,
       lastUsedUserIds: next3Users,
-    })
-    .where(eq(rotationState.id, rotationId));
+    });
+  }
 
   return next3Users;
 }
@@ -532,7 +538,7 @@ export async function assignIncident(
     .update(incidents)
     .set({
       assignedUserId: userId,
-      status: "open",
+      status: "en_route",
     })
     .where(eq(incidents.id, incidentId));
 

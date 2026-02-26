@@ -1,6 +1,5 @@
 import mysql from "mysql2/promise";
-import bcrypt from "bcryptjs";
-
+import bcrypt from "bcrypt";
 
 const SALT_ROUNDS = 10;
 

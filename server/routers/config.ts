@@ -47,19 +47,13 @@ export const configRouter = router({
   }),
 
   // Update business hours ladder
-  updateBusinessHoursLadder: publicProcedure
+  updateBusinessHoursLadder: adminProcedure
     .input(
       z.object({
         steps: z.array(z.string()),
       })
     )
-    .mutation(async ({ input, ctx }) => {
-      if (!ctx.user?.id) {
-        throw new Error("User not authenticated");
-      }
-
-      // TODO: Check if user has admin role
-
+    .mutation(async ({ input }) => {
       await setSystemConfig("business_hours_ladder", input);
 
       return { success: true };
@@ -71,19 +65,13 @@ export const configRouter = router({
   }),
 
   // Update after hours ladder
-  updateAfterHoursLadder: publicProcedure
+  updateAfterHoursLadder: adminProcedure
     .input(
       z.object({
         steps: z.array(z.string()),
       })
     )
-    .mutation(async ({ input, ctx }) => {
-      if (!ctx.user?.id) {
-        throw new Error("User not authenticated");
-      }
-
-      // TODO: Check if user has admin role
-
+    .mutation(async ({ input }) => {
       await setSystemConfig("after_hours_ladder", input);
 
       return { success: true };

@@ -1,191 +1,233 @@
-import { Router } from 'express';
-import { db } from '../db';
-import { incidents, users } from '../../drizzle/schema';
-import { eq, and, isNull, desc } from 'drizzle-orm';
-import { notifyAvailableTechnicians } from '../_core/push-notifications';
+import { z } from "zod";
+import { publicProcedure, protectedProcedure, adminProcedure, router } from "../_core/trpc";
+import {
+  getAllOpenIncidents,
+  getIncidentById,
+  getIncidentsByUser,
+  getUnclaimedIncidents,
+  updateIncidentStatus,
+  closeIncident,
+  getCallAttemptsByIncident,
+  getIncidentEvents,
+  getUserById,
+  getSiteById,
+} from "../db";
+import {
+  assignIncident,
+  startRouting,
+  logIncidentEvent,
+} from "../routing-engine";
 
-const router = Router();
+export const incidentsRouter = router({
+  // Get all open incidents (for admin board) - ADMIN ONLY
+  getAllOpen: adminProcedure.query(async () => {
+    return await getAllOpenIncidents();
+  }),
 
-// Get all incidents
-router.get('/', async (req, res) => {
-  try {
-    const { status, search } = req.query;
-    
-    let query = db.select().from(incidents);
-    
-    if (status) {
-      query = query.where(eq(incidents.status, status as string));
-    }
-    
-    const allIncidents = await query.orderBy(desc(incidents.createdAt));
-    
-    // Filter by search if provided
-    let filteredIncidents = allIncidents;
-    if (search) {
-      const searchLower = (search as string).toLowerCase();
-      filteredIncidents = allIncidents.filter(
-        (incident) =>
-          incident.buildingId?.toLowerCase().includes(searchLower) ||
-          incident.description?.toLowerCase().includes(searchLower)
-      );
-    }
-    
-    // Get assigned technicians
-    const incidentsWithTechs = await Promise.all(
-      filteredIncidents.map(async (incident) => {
-        if (incident.assignedTechnicianId) {
-          const tech = await db
-            .select()
-            .from(users)
-            .where(eq(users.id, incident.assignedTechnicianId))
-            .limit(1);
-          
-          return {
-            ...incident,
-            technician: tech[0] || null,
-          };
-        }
-        return incident;
-      })
-    );
-    
-    res.json(incidentsWithTechs);
-  } catch (error) {
-    console.error('Error fetching incidents:', error);
-    res.status(500).json({ message: 'Failed to fetch incidents' });
-  }
-});
+  // Get unclaimed incidents (for admin board) - ADMIN ONLY
+  getUnclaimed: adminProcedure.query(async () => {
+    return await getUnclaimedIncidents();
+  }),
 
-// Get single incident
-router.get('/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    
-    const incident = await db
-      .select()
-      .from(incidents)
-      .where(eq(incidents.id, parseInt(id)))
-      .limit(1);
-    
-    if (!incident[0]) {
-      return res.status(404).json({ message: 'Incident not found' });
-    }
-    
-    // Get assigned technician if exists
-    if (incident[0].assignedTechnicianId) {
-      const tech = await db
-        .select()
-        .from(users)
-        .where(eq(users.id, incident[0].assignedTechnicianId))
-        .limit(1);
-      
-      return res.json({
-        ...incident[0],
-        technician: tech[0] || null,
+  // Get incidents assigned to current user (for tech mobile app) - PROTECTED
+  getMyIncidents: protectedProcedure.query(async ({ ctx }) => {
+    return await getIncidentsByUser(ctx.user.id);
+  }),
+
+  // Get incident details with related data - PROTECTED
+  getDetails: protectedProcedure
+    .input(z.object({ id: z.number() }))
+    .query(async ({ input, ctx }) => {
+      const incident = await getIncidentById(input.id);
+      if (!incident) {
+        throw new Error("Incident not found");
+      }
+
+      const [callAttempts, events, assignedUser, site] = await Promise.all([
+        getCallAttemptsByIncident(input.id),
+        getIncidentEvents(input.id),
+        incident.assignedUserId ? getUserById(incident.assignedUserId) : null,
+        incident.siteId ? getSiteById(incident.siteId) : null,
+      ]);
+
+      return {
+        incident,
+        callAttempts,
+        events,
+        assignedUser,
+        site,
+      };
+    }),
+
+  // Accept incident (tech claims it) - PROTECTED
+  accept: protectedProcedure
+    .input(z.object({ incidentId: z.number() }))
+    .mutation(async ({ input, ctx }) => {
+
+      await assignIncident(input.incidentId, ctx.user.id, ctx.user.id);
+
+      await logIncidentEvent({
+        incidentId: input.incidentId,
+        type: "incident_accepted",
+        userId: ctx.user.id,
+        payloadJson: { acceptedBy: ctx.user.id },
       });
-    }
-    
-    res.json(incident[0]);
-  } catch (error) {
-    console.error('Error fetching incident:', error);
-    res.status(500).json({ message: 'Failed to fetch incident' });
-  }
-});
 
-// Create new incident
-router.post('/', async (req, res) => {
-  try {
-    const { building_id, description, priority, assigned_technician_id } = req.body;
-    
-    if (!building_id || !description) {
-      return res.status(400).json({ message: 'building_id and description are required' });
-    }
-    
-    const newIncident = await db
-      .insert(incidents)
-      .values({
-        buildingId: building_id,
-        description,
-        priority: priority || 'medium',
-        status: 'pending',
-        assignedTechnicianId: assigned_technician_id || null,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+      return { success: true };
+    }),
+
+  // Decline incident (tech declines it) - PROTECTED
+  decline: protectedProcedure
+    .input(
+      z.object({
+        incidentId: z.number(),
+        reason: z.enum(["busy", "already_on_call", "out_of_area", "other"]),
+        reasonText: z.string().optional(),
       })
-      .returning();
-    
-    // Send push notification to available technicians
-    try {
-      await notifyAvailableTechnicians({
-        title: '🚨 New Emergency Incident',
-        body: `${building_id}: ${description}`,
-        data: {
-          incidentId: newIncident[0].id,
-          buildingId: building_id,
-          priority: priority || 'medium',
-          type: 'new_incident',
+    )
+    .mutation(async ({ input, ctx }) => {
+
+      await logIncidentEvent({
+        incidentId: input.incidentId,
+        type: "incident_declined",
+        userId: ctx.user.id,
+        payloadJson: {
+          declinedBy: ctx.user.id,
+          reason: input.reason,
+          reasonText: input.reasonText,
         },
       });
-    } catch (notifError) {
-      console.error('Failed to send push notification:', notifError);
-      // Don't fail the request if notification fails
-    }
-    
-    res.status(201).json(newIncident[0]);
-  } catch (error) {
-    console.error('Error creating incident:', error);
-    res.status(500).json({ message: 'Failed to create incident' });
-  }
-});
 
-// Update incident
-router.put('/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const updates = req.body;
-    
-    // Convert snake_case to camelCase for database
-    const dbUpdates: any = {
-      updatedAt: new Date(),
-    };
-    
-    if (updates.building_id !== undefined) dbUpdates.buildingId = updates.building_id;
-    if (updates.description !== undefined) dbUpdates.description = updates.description;
-    if (updates.status !== undefined) dbUpdates.status = updates.status;
-    if (updates.priority !== undefined) dbUpdates.priority = updates.priority;
-    if (updates.assigned_technician_id !== undefined) {
-      dbUpdates.assignedTechnicianId = updates.assigned_technician_id;
-    }
-    
-    const updated = await db
-      .update(incidents)
-      .set(dbUpdates)
-      .where(eq(incidents.id, parseInt(id)))
-      .returning();
-    
-    if (!updated[0]) {
-      return res.status(404).json({ message: 'Incident not found' });
-    }
-    
-    res.json(updated[0]);
-  } catch (error) {
-    console.error('Error updating incident:', error);
-    res.status(500).json({ message: 'Failed to update incident' });
-  }
-});
+      // TODO: Trigger next step in routing ladder
 
-// Delete incident
-router.delete('/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    
-    await db.delete(incidents).where(eq(incidents.id, parseInt(id)));
-    
-    res.json({ message: 'Incident deleted successfully' });
-  } catch (error) {
-    console.error('Error deleting incident:', error);
-    res.status(500).json({ message: 'Failed to delete incident' });
-  }
-});
+      return { success: true };
+    }),
 
-export default router;
+  // Update incident status (en route, on site, etc.) - PROTECTED
+  updateStatus: protectedProcedure
+    .input(
+      z.object({
+        incidentId: z.number(),
+        status: z.enum(["open", "en_route", "on_site", "resolved", "follow_up_required"]),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+
+      await updateIncidentStatus(input.incidentId, input.status, ctx.user.id);
+
+      return { success: true };
+    }),
+
+  // Close incident with outcome - PROTECTED
+  close: protectedProcedure
+    .input(
+      z.object({
+        incidentId: z.number(),
+        outcome: z.enum(["nuisance", "device_issue", "panel_trouble", "unknown", "other"]),
+        outcomeNotes: z.string().optional(),
+        followUpRequired: z.boolean(),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+
+      await closeIncident(
+        input.incidentId,
+        {
+          outcome: input.outcome,
+          outcomeNotes: input.outcomeNotes,
+          followUpRequired: input.followUpRequired,
+        },
+        ctx.user.id
+      );
+
+      return { success: true };
+    }),
+
+  // Manual assignment (admin only) - ADMIN ONLY
+  manualAssign: adminProcedure
+    .input(
+      z.object({
+        incidentId: z.number(),
+        userId: z.number(),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+
+      await assignIncident(input.incidentId, input.userId, ctx.user.id);
+
+      return { success: true };
+    }),
+
+  // Manual escalation (admin only) - ADMIN ONLY
+  manualEscalate: adminProcedure
+    .input(z.object({ incidentId: z.number() }))
+    .mutation(async ({ input, ctx }) => {
+
+      await logIncidentEvent({
+        incidentId: input.incidentId,
+        type: "manual_escalation",
+        userId: ctx.user.id,
+        payloadJson: { escalatedBy: ctx.user.id },
+      });
+
+      // Restart routing from current step
+      await startRouting(input.incidentId);
+
+      return { success: true };
+    }),
+
+  // Create manual incident (admin/manager only) - ADMIN ONLY
+  createManual: adminProcedure
+    .input(
+      z.object({
+        buildingId: z.string().min(1, "Building ID is required"),
+        site: z.string().min(1, "Site/Address is required"),
+        incidentType: z.string().min(1, "Incident type is required"),
+        description: z.string().min(1, "Description is required"),
+        priority: z.enum(["low", "medium", "high", "critical"]),
+        callerName: z.string().optional(),
+        callerPhone: z.string().optional(),
+        assignedTechId: z.number().optional(),
+        triggerRouting: z.boolean().default(false),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      // Import createIncident from routing-engine
+      const { createIncident } = await import("../routing-engine");
+
+      // Create the incident with source='manual'
+      const incidentId = await createIncident({
+        buildingId: input.buildingId,
+        source: "manual",
+        createdByUserId: ctx.user.id,
+        callerId: input.callerPhone,
+      });
+
+      // Log additional incident details in event
+      await logIncidentEvent({
+        incidentId,
+        type: "manual_incident_created",
+        userId: ctx.user.id,
+        payloadJson: {
+          site: input.site,
+          incidentType: input.incidentType,
+          description: input.description,
+          priority: input.priority,
+          callerName: input.callerName,
+          callerPhone: input.callerPhone,
+          createdBy: ctx.user.id,
+        },
+      });
+
+      // If assigned tech is specified, assign immediately
+      if (input.assignedTechId) {
+        await assignIncident(incidentId, input.assignedTechId, ctx.user.id);
+      }
+      // If trigger routing is enabled and no tech assigned, start routing
+      else if (input.triggerRouting) {
+        await startRouting(incidentId);
+      }
+
+      return { success: true, incidentId };
+    }),
+});

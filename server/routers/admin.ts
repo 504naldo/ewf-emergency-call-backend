@@ -1,9 +1,9 @@
-import { publicProcedure, router } from "../_core/trpc";
+import { adminProcedure, router } from "../_core/trpc";
 import { z } from "zod";
 import { getDb } from "../db";
 
 export const adminRouter = router({
-  executeSQL: publicProcedure
+  executeSQL: adminProcedure
     .input(
       z.object({
         sql: z.string().min(1),

@@ -1,8 +1,7 @@
 import { getDb } from "../db";
 import { users } from "../../drizzle/schema";
 import { eq } from "drizzle-orm";
-import bcrypt from "bcryptjs";
-
+import bcrypt from "bcrypt";
 
 /**
  * Seed script to create real technician users for EWF Emergency Call Service
@@ -67,6 +66,13 @@ async function seedTechnicians() {
       console.error(`❌ Error creating ${tech.email}:`, error);
     }
   }
+  
+  // Promote Ranaldo to admin role
+  await db
+    .update(users)
+    .set({ role: "admin" })
+    .where(eq(users.email, "ranaldo@ewandf.ca"));
+  console.log("\n🔑 Promoted ranaldo@ewandf.ca to admin role");
   
   console.log(`\n✨ Seeding complete!`);
   console.log(`\n📝 Default password for all technicians: ${defaultPassword}`);

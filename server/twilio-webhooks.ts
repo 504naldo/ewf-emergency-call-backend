@@ -11,7 +11,7 @@ import {
 } from "./routing-engine";
 import { getDb } from "./db";
 import { callAttempts, users, incidents } from "../drizzle/schema";
-import { eq, and, notInArray } from "drizzle-orm";
+import { eq, and, notInArray, inArray } from "drizzle-orm";
 
 const router = Router();
 
@@ -122,7 +122,10 @@ async function getUsersForStep(
       and(
         eq(users.available, true),
         eq(users.active, true),
-        userIds.length > 0 ? notInArray(users.id, attemptedUserIds) : undefined
+        inArray(users.id, userIds),
+        attemptedUserIds.length > 0
+          ? notInArray(users.id, attemptedUserIds)
+          : undefined
       )
     );
   
@@ -439,7 +442,11 @@ router.post("/telephony/attempt-failed", verifyTwilioSignature, async (req, res)
         .limit(1);
       
       if (attemptResult && attemptResult.length > 0) {
-        const result = reason === "no-answer" ? "missed" : reason === "busy" ? "timeout" : "timeout";
+        const result = reason === "no-answer"
+          ? "missed"
+          : reason === "busy"
+          ? "declined"
+          : "timeout";
         
         await db
           .update(callAttempts)
