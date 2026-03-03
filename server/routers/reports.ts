@@ -4,6 +4,8 @@ import { getDb } from "../db";
 import { reports, incidents } from "../../drizzle/schema";
 import { eq } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
+import { sendIncidentEmail } from "../google";
+import type { IncidentEmailData } from "../google";
 
 const reportDataSchema = z.object({
   buildingId: z.string().optional(), // Required for submission, optional for draft
@@ -135,6 +137,7 @@ export const reportsRouter = router({
   /**
    * Submit report (mark as final)
    * Permissions: Assigned tech only
+   * Side effect: sends email to reports@ewandf.ca via Gmail API
    */
   submit: protectedProcedure
     .input(
@@ -178,6 +181,8 @@ export const reportsRouter = router({
       const existingReportResult = await db.select().from(reports).where(eq(reports.incidentId, input.incidentId)).limit(1);
       const existingReport = existingReportResult.length > 0 ? existingReportResult[0] : null;
 
+      let reportId: number;
+
       if (existingReport) {
         // Check if already submitted
         if (existingReport.status === "submitted") {
@@ -197,7 +202,7 @@ export const reportsRouter = router({
           })
           .where(eq(reports.id, existingReport.id));
 
-        return { id: existingReport.id, status: "submitted" as const };
+        reportId = existingReport.id;
       } else {
         // Create and submit
         const result = await db.insert(reports).values({
@@ -207,7 +212,48 @@ export const reportsRouter = router({
           status: "submitted",
         });
 
-        return { id: result[0].insertId, status: "submitted" as const };
+        reportId = result[0].insertId;
       }
+
+      // -----------------------------------------------------------------------
+      // Send report email to reports@ewandf.ca via Gmail API
+      // This is fire-and-forget: email failure does NOT roll back the submission.
+      // -----------------------------------------------------------------------
+      const emailData: IncidentEmailData = {
+        incidentId: incident.id,
+        buildingId: incident.buildingId,
+        callerId: incident.callerId,
+        source: incident.source,
+        status: incident.status,
+        outcome: incident.outcome ?? null,
+        outcomeNotes: incident.outcomeNotes ?? null,
+        followUpRequired: incident.followUpRequired,
+        createdAt: incident.createdAt,
+        resolvedAt: incident.resolvedAt ?? null,
+        assignedTechName: ctx.user.name ?? null,
+        report: {
+          site: input.data.site ?? null,
+          address: input.data.address ?? null,
+          issueType: input.data.issueType ?? null,
+          description: input.data.description ?? null,
+          actionsTaken: input.data.actionsTaken ?? null,
+          partsUsed: input.data.partsUsed ?? null,
+          arrivalTime: input.data.arrivalTime ?? null,
+          departTime: input.data.departTime ?? null,
+          billableHours: input.data.billableHours ?? null,
+          followUpNotes: input.data.followUpNotes ?? null,
+          status: input.data.status ?? null,
+          photos: input.data.photos ?? null,
+        },
+      };
+
+      sendIncidentEmail(emailData).catch((err) => {
+        console.error(
+          `[Gmail] Failed to send report email for incident #${incident.id}:`,
+          err?.message ?? err
+        );
+      });
+
+      return { id: reportId, status: "submitted" as const };
     }),
 });
