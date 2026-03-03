@@ -4,7 +4,7 @@ import { getDb } from "../db";
 import { reports, incidents } from "../../drizzle/schema";
 import { eq } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
-import { sendIncidentEmail } from "../google";
+import { sendIncidentEmail, createCalendarEvent } from "../google";
 import type { IncidentEmailData } from "../google";
 
 const reportDataSchema = z.object({
@@ -250,6 +250,27 @@ export const reportsRouter = router({
       sendIncidentEmail(emailData).catch((err) => {
         console.error(
           `[Gmail] Failed to send report email for incident #${incident.id}:`,
+          err?.message ?? err
+        );
+      });
+
+      // -----------------------------------------------------------------------
+      // Create a Google Calendar event for this incident (fire-and-forget)
+      // -----------------------------------------------------------------------
+      const calDescription =
+        `Incident #${incident.id}\n` +
+        `Technician: ${ctx.user.name ?? "Unknown"}\n` +
+        `Issue: ${input.data.issueType ?? "—"}\n` +
+        `Description: ${input.data.description ?? "—"}\n` +
+        `Actions Taken: ${input.data.actionsTaken ?? "—"}`;
+
+      createCalendarEvent(
+        String(incident.id),
+        incident.buildingId ?? String(incident.id),
+        calDescription
+      ).catch((err) => {
+        console.error(
+          `[Calendar] Failed to create calendar event for incident #${incident.id}:`,
           err?.message ?? err
         );
       });
