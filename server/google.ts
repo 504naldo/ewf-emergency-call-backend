@@ -205,7 +205,7 @@ export async function sendIncidentEmail(data: IncidentEmailData): Promise<string
   const RECIPIENT = "reports@ewandf.ca";
   const SENDER = "reports@ewandf.ca";
 
-  const subject = `Incident Report – Building ${data.buildingId ?? data.incidentId} (ID #${data.incidentId})`;
+  const subject = `Incident Report - Building ${data.buildingId ?? data.incidentId} (ID #${data.incidentId})`;
 
   // Build HTML body
   const fmt = (val: any, fallback = "—") =>
@@ -292,10 +292,12 @@ export async function sendIncidentEmail(data: IncidentEmailData): Promise<string
 </html>`;
 
   // RFC 2822 raw message, base64url encoded
+  // Encode subject using RFC 2047 encoded-word syntax to safely handle any non-ASCII chars
+  const encodedSubject = `=?UTF-8?B?${Buffer.from(subject).toString("base64")}?=`;
   const rawMessage = [
     `From: EWF Emergency System <${SENDER}>`,
     `To: ${RECIPIENT}`,
-    `Subject: ${subject}`,
+    `Subject: ${encodedSubject}`,
     "MIME-Version: 1.0",
     'Content-Type: text/html; charset="UTF-8"',
     "",
