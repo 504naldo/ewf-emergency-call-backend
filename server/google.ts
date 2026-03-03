@@ -60,9 +60,11 @@ async function getAuthClient(): Promise<InstanceType<typeof google.auth.OAuth2>>
 // Generate the Google OAuth consent URL
 // ---------------------------------------------------------------------------
 export function getGoogleAuthUrl(): string {
-  const scopes = process.env.GOOGLE_SCOPES
+  // Always include the required scopes; merge with any extra scopes from env
+  const envScopes = process.env.GOOGLE_SCOPES
     ? process.env.GOOGLE_SCOPES.split(",").map((s) => s.trim())
-    : DEFAULT_SCOPES;
+    : [];
+  const scopes = Array.from(new Set([...DEFAULT_SCOPES, ...envScopes]));
 
   const client = new google.auth.OAuth2(
     GOOGLE_CLIENT_ID,
