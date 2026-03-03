@@ -8,7 +8,9 @@ import {
   varchar,
   json,
   index,
+  datetime,
 } from "drizzle-orm/mysql-core";
+import { sql } from "drizzle-orm";
 
 // ============================================================================
 // Users & Authentication
@@ -222,8 +224,23 @@ export const systemConfig = mysqlTable("system_config", {
 });
 
 // ============================================================================
+// OAuth Tokens
+// ============================================================================
+
+export const oauthTokens = mysqlTable("oauth_tokens", {
+  id: int("id").autoincrement().primaryKey(),
+  provider: varchar("provider", { length: 50 }).notNull(),
+  accountEmail: varchar("account_email", { length: 255 }).notNull(),
+  refreshToken: text("refresh_token").notNull(),
+  createdAt: datetime("created_at").default(sql`CURRENT_TIMESTAMP`),
+});
+
+// ============================================================================
 // Type Exports
 // ============================================================================
+
+export type OauthToken = typeof oauthTokens.$inferSelect;
+export type InsertOauthToken = typeof oauthTokens.$inferInsert;
 
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;

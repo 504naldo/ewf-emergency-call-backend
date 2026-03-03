@@ -54,6 +54,7 @@
     "expo-video": "~3.0.15",
     "expo-web-browser": "~15.0.10",
     "express": "^4.22.1",
+    "googleapis": "^171.4.0",
     "jose": "6.1.0",
     "jsonwebtoken": "^9.0.3",
     "mysql2": "^3.16.0",

@@ -9,6 +9,7 @@ import { createContext } from "./context";
 import webhookRoutes from "../webhooks";
 import authRoutes from "../auth";
 import twilioWebhookRoutes from "../twilio-webhooks";
+import googleRoutes from "../google-routes";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise((resolve) => {
@@ -67,6 +68,9 @@ async function startServer() {
   
   // Register Twilio webhook routes
   app.use("/api", twilioWebhookRoutes);
+
+  // Register Google OAuth + Calendar routes
+  app.use("/api", googleRoutes);
 
   // Lightweight health endpoints for Railway healthcheck
   app.get("/", (_req, res) => {
