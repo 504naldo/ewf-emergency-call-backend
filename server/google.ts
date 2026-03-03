@@ -42,11 +42,17 @@ export function getGoogleAuthUrl(): string {
     access_type: "offline",
     prompt: "consent",
     scope: scopes,
+    login_hint: "reports@ewandf.ca",
   });
 }
 
 // ---------------------------------------------------------------------------
-// Exchange auth code for tokens and persist the refresh_token in MySQL
+// Exchange auth code for tokens and persist the refresh_token in MySQL.
+//
+// NOTE: We intentionally do NOT call userinfo.get() here — that call requires
+// a separate authenticated request and causes "missing credential" errors
+// when the access_token has not yet been applied to a second client instance.
+// Instead we use the fixed account email directly.
 // ---------------------------------------------------------------------------
 export async function exchangeCodeForTokens(code: string): Promise<void> {
   const client = new google.auth.OAuth2(
@@ -56,7 +62,6 @@ export async function exchangeCodeForTokens(code: string): Promise<void> {
   );
 
   const { tokens } = await client.getToken(code);
-  client.setCredentials(tokens);
 
   if (!tokens.refresh_token) {
     console.error(
@@ -70,11 +75,8 @@ export async function exchangeCodeForTokens(code: string): Promise<void> {
     );
   }
 
-  // Fetch the authenticated account's email address
-  const oauth2 = google.oauth2({ version: "v2", auth: client });
-  const userInfoResponse = await oauth2.userinfo.get();
-  const email: string =
-    (userInfoResponse.data as { email?: string }).email ?? "reports@ewandf.ca";
+  // Use the fixed service account email — no additional API call needed
+  const email = "reports@ewandf.ca";
 
   const db = await getDb();
   if (!db) throw new Error("[Google OAuth] Database not available.");
